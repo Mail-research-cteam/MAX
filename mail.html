@@ -1,0 +1,495 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Почта Mail — совместная работа подключена</title>
+<!--
+  Статическая страница по макету Figma: «Mail login • Restriction • Employer» (node 31212-185834, 1366×820).
+  Все размеры, отступы, радиусы и цвета взяты из макета (ноды 31212:185835 — хедер, 31453:267190 — карточка,
+  31212:186310 — снекбар, 31214:186500 — кнопка «Помощь»). Иконки и иллюстрации — экспорт из того же файла (assets/).
+  Модальное окно — ноды 31057:230134 (затемнение) и 31057:230136 (карточка).
+  Вёрстка: flex/grid, без фреймворков, из JS — отключение перехода по href="#" и открытие модального окна.
+-->
+<style>
+  /* ── шрифт из макета: VK Sans Display (локальные файлы, относительные пути) ── */
+  @font-face{
+    font-family:'VK Sans Display';
+    src:url('assets/fonts/VK_Sans_Display_Regular.woff2') format('woff2');
+    font-weight:400;font-style:normal;font-display:swap;
+  }
+  @font-face{
+    font-family:'VK Sans Display';
+    src:url('assets/fonts/VK_Sans_Display_Medium.woff2') format('woff2');
+    font-weight:500;font-style:normal;font-display:swap;
+  }
+
+  /* ── токены из макета ─────────────────────────────────────────────── */
+  :root{
+    --bg:            #f6f7f8;   /* фон страницы */
+    --surface:       #ffffff;   /* карточки, пилюли */
+    --text-primary:  #2c2d2e;
+    --text-secondary:#697481;
+    --text-placeholder:#87898f;
+    --accent:        #0070f0;   /* синий текст ссылок и активного таба */
+    --accent-vk:     #0077ff;   /* синий заливок кнопок и бейджа */
+    --accent-tint:   rgba(0,119,255,.1);   /* #0077ff1a */
+    --neutral-tint:  rgba(0,16,61,.06);    /* #00103d0f — вторичная кнопка */
+    --border:        rgba(0,16,61,.08);    /* #00103d14 — рамка поиска */
+    --snack:         #303030;
+    --hint-bg:       #dde9ff;
+    --hint-text:     #1c4479;
+    --overlay:       rgba(0,0,0,.48);   /* #0000007a — затемнение под модальным окном */
+    --tip-bg:        #b8fc75;   /* зелёная плашка-подсказка в модальном окне */
+    --tip-text:      #087c6d;
+    --font: 'VK Sans Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    --font-alt: Arial, 'Helvetica Neue', sans-serif;   /* подсказка и снекбар в макете набраны Arial */
+    --shadow-snack: 0 2px 8px rgba(0,0,0,.16), 0 1px 2px rgba(0,0,0,.08);
+  }
+
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    min-height:100vh;
+    background:var(--bg);
+    color:var(--text-primary);
+    font-family:var(--font);
+    -webkit-font-smoothing:antialiased;
+    overflow-x:auto;               /* макет только desktop — без «придуманной» мобильной версии */
+  }
+  img{display:block}
+  a{color:var(--accent);text-decoration:none}
+  button{font:inherit;color:inherit;background:none;border:0;padding:0}
+
+  /* ── хедер: 62px, контент по центру, боковые паддинги 16/12 ───────── */
+  .topbar{
+    height:62px;
+    padding:0 12px 0 16px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:16px;
+  }
+  .topbar__left{display:flex;align-items:center;gap:20px;min-width:0;overflow:hidden}
+  .logo{width:93px;height:30px;flex:0 0 auto}
+
+  .tabs{display:flex;align-items:center;gap:2px}
+  .tab{
+    display:inline-flex;align-items:center;gap:4px;
+    height:36px;padding:8px 16px;border-radius:20px;
+    font-size:15px;line-height:20px;font-weight:500;
+    color:var(--text-primary);
+    white-space:nowrap;
+  }
+  .tab:hover{background:var(--neutral-tint)}
+  .tab.is-active{background:var(--accent-tint);color:var(--accent)}
+  .tab__chevron{width:20px;height:16px}
+
+  .topbar__right{display:flex;align-items:center;gap:12px;flex:0 0 auto}
+
+  /* поиск 280×36, радиус 8, рамка 1px #00103d14 */
+  .search{
+    display:flex;align-items:center;
+    width:280px;flex:0 0 280px;height:36px;
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:8px;
+    overflow:hidden;
+  }
+  .search__icon{
+    width:36px;height:36px;flex:0 0 36px;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .search__icon img{width:20px;height:20px}
+  .search__input{
+    width:100%;height:100%;
+    padding:0 4px 0 4px;
+    border:0;outline:none;background:none;
+    font-family:var(--font);font-size:15px;line-height:20px;
+    color:var(--text-primary);
+  }
+  .search__input::placeholder{color:var(--text-placeholder)}
+
+  /* виджет «пт, 31 июля» 150×36 + аватар 36×36 с бейджем */
+  .widget{
+    display:inline-flex;align-items:center;gap:8px;
+    width:150px;flex:0 0 150px;height:36px;padding:0 7px;
+    border-radius:8px;background:var(--accent-tint);
+    font-size:15px;line-height:20px;color:var(--text-primary);
+    white-space:nowrap;
+  }
+  .widget img{width:22px;height:22px}
+
+  .avatar{position:relative;width:36px;height:36px;flex:0 0 36px}
+  .avatar__img{width:36px;height:36px;border-radius:50%}
+  .avatar__badge{
+    position:absolute;top:0;right:0;
+    width:10px;height:10px;border-radius:5px;
+    background:var(--bg);
+    display:flex;align-items:center;justify-content:center;
+  }
+  .avatar__badge::after{
+    content:'';display:block;width:6px;height:6px;border-radius:50%;
+    background:var(--accent-vk);
+  }
+
+  /* ── карточка 948px: заголовок + QR + две колонки + ссылка ────────── */
+  .page{padding:164px 0 120px;display:flex;justify-content:center}
+  .card{width:948px;flex:0 0 948px;position:relative}
+
+  /* заголовок 32/40 Medium: контейнер из макета — 948×120 (3 строки по 40) */
+  .title{
+    height:120px;margin:0 0 32px;
+    font-size:32px;line-height:40px;font-weight:500;
+    color:var(--text-primary);
+    text-align:center;
+  }
+  .title__line{position:relative;display:inline-block}
+  /* иллюстрация-галочка слева от первой строки: 60.85×53, выходит выше строки на 14px */
+  .title__check{
+    position:absolute;top:-14px;right:calc(100% - 3px);
+    width:61px;height:53px;
+  }
+  /* нарисованное подчёркивание под «совместную работу»: 312×12 */
+  .title__underlined{position:relative;display:inline-block}
+  .title__underlined::after{
+    content:'';position:absolute;left:-6px;right:-6px;bottom:-2px;height:12px;
+    background:url("assets/underline.svg") no-repeat center / 100% 12px;
+  }
+
+  /* ряд: QR 248×248 + 12px + правая колонка 688px */
+  .row{display:flex;gap:12px;align-items:flex-start}
+  .qr{
+    width:248px;height:248px;flex:0 0 248px;
+    background:var(--surface);border-radius:24px;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .qr img{width:184px;height:184px}
+  .col-right{width:688px;display:flex;flex-direction:column;gap:12px}
+
+  /* 688×196 из макета: высота задана макетом, а не содержимым,
+     иначе блоки «съезжают» относительно QR-кода при другом шрифте */
+  .info{
+    background:var(--surface);border-radius:24px;padding:4px;
+    min-height:196px;display:flex;
+  }
+  .panel{width:340px;flex:0 0 340px;min-height:188px;padding:20px;border-radius:20px;display:flex;flex-direction:column}
+  .panel__title{margin:0;font-size:24px;line-height:28px;font-weight:500;color:var(--text-primary)}
+  .panel__text{margin:8px 0 0;flex:0 0 auto;font-size:15px;line-height:20px}
+  .panel--owner .panel__text{color:var(--text-primary)}
+  .panel--member .panel__text{color:var(--text-secondary)}
+  /* в макете между абзацем и кнопками 20px, кнопки прижаты к низу панели на 20px */
+  .panel__actions{margin-top:auto;padding-top:20px;flex:0 0 auto;display:flex;gap:12px}
+
+  /* кнопки 32px, радиус 8, лейбл 14/20 Medium */
+  .btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:6px;
+    height:32px;padding:6px 16px;border-radius:8px;
+    font-size:14px;line-height:20px;font-weight:500;
+    white-space:nowrap;cursor:pointer;
+  }
+  .btn--primary{background:var(--accent-vk);color:#fff}
+  .btn--secondary{background:var(--neutral-tint);color:var(--text-primary)}
+  .btn--secondary:hover{background:rgba(0,16,61,.1)}
+
+  .linkbar{
+    height:40px;border-radius:20px;background:var(--surface);
+    display:flex;align-items:center;justify-content:center;
+    font-size:15px;line-height:20px;
+  }
+
+  /* ── подсказка у QR: координаты слоя из макета, относительно карточки ── */
+  .hint{position:absolute;inset:0;pointer-events:none}
+  /* пузырь из макета: 204.72×54 (белая обводка 2px), повёрнут против часовой стрелки;
+     угол и точка вращения подобраны по отрендеренному фрейму */
+  .hint__bubble{
+    position:absolute;left:-40px;top:125px;
+    width:206.7px;height:56px;padding:0 13px;
+    display:flex;align-items:center;
+    border:2px solid #fff;border-radius:12px;
+    background:var(--hint-bg);
+    transform:rotate(-3.3deg);transform-origin:0 0;
+    font-family:var(--font-alt);font-size:13px;line-height:18px;color:var(--hint-text);
+  }
+  /* стрелка из макета: штрих 84×73, левый верхний угол в (145,376) фрейма */
+  .hint__arrow{position:absolute;left:-64px;top:150px;width:85px;height:73px}
+
+  /* ── снекбар слева внизу и кнопка «Помощь» справа внизу ──────────── */
+  /* иконка в макете стоит в 12px от левого края тела, текст — в 52px (12 + 28 + 12) */
+  .snackbar{
+    position:fixed;left:12px;bottom:12px;z-index:10;
+    width:336px;min-height:64px;
+    display:flex;align-items:center;gap:12px;
+    padding:12px 16px 12px 12px;
+    background:var(--snack);border-radius:16px;box-shadow:var(--shadow-snack);
+    font-family:var(--font-alt);font-size:15px;line-height:20px;color:#fff;
+  }
+  .snackbar img{width:28px;height:28px;flex:0 0 28px}
+  .snackbar p{margin:0 0 0 0;width:256px}
+
+  /* в макете у кнопки «Помощь» иконка стоит в 12px от края, а лейбл — с доп. отступом 4px:
+     итог 12 + 20 + 6 + 57 + 16 = 111px, как у ноды Button 3 */
+  .help{position:fixed;right:32px;bottom:20px;z-index:10}
+  .help .btn{background:#fff;padding-left:12px}
+  .help img{width:20px;height:20px}
+
+  /* ── модальное окно «Что делать если нет приложения MAX?» ──────────
+     Ноды макета 31057:230134 (затемнение) и 31057:230136 (карточка): карточка
+     540×484 радиусом 12 по центру экрана, над затемнением rgba(0,0,0,.48) —
+     под ним та же страница mail.html. Размеры и цвета — из макета, тень карточки
+     из экспорта: 0 16 16 rgba(0,0,0,.08) + 0 0 8 rgba(0,0,0,.04). */
+  .modal{
+    position:fixed;inset:0;z-index:100;
+    display:flex;align-items:center;justify-content:center;
+    background:var(--overlay);
+    visibility:hidden;opacity:0;                 /* закрытое состояние — вне потока фокуса */
+    transition:opacity .15s ease-out;
+  }
+  .modal.is-open{visibility:visible;opacity:1}
+  body.is-modal-open{overflow:hidden}            /* под окном страница не прокручивается */
+
+  .modal__card{
+    position:relative;width:540px;height:484px;
+    background:var(--surface);border-radius:12px;
+    box-shadow:0 16px 16px rgba(0,0,0,.08),0 0 8px rgba(0,0,0,.04);
+    overflow:hidden;
+  }
+  /* при открытии фокус ставится на карточку (role="dialog"): кольца у неё нет —
+     видимая рамка фокуса остаётся только у кнопок, когда по ним ходят с клавиатуры */
+  .modal__card:focus{outline:none}
+
+  /* верхний блок 540×264: QR-код по центру + подсказка + стрелка */
+  .modal__hero{position:relative;height:264px;border-radius:12px 12px 0 0;background:var(--hint-bg)}
+  /* белая карточка QR 180×180 (радиус 21.6) в 20.8px от верха, код внутри 164×164 */
+  .modal__qr{
+    position:absolute;left:50%;top:20.8px;margin-left:-90px;
+    width:180px;height:180px;
+    background:var(--surface);border-radius:21.6px;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .modal__qr img{width:164px;height:164px}
+  /* зелёная плашка 205×54 (обводка 1.5px) со сдвигом от центра карточки */
+  .modal__tip{
+    position:absolute;left:193.77px;top:199.34px;
+    width:205px;height:54px;margin:0;padding:8px 13px;
+    display:flex;align-items:center;
+    border:1.5px solid #fff;border-radius:12px;background:var(--tip-bg);
+    font-family:var(--font-alt);font-size:13px;line-height:18px;color:var(--tip-text);
+  }
+  /* стрелка: путь и его координаты — из экспорта макета, поэтому viewBox со сдвигом карточки */
+  .modal__arrow{position:absolute;left:0;top:0}
+
+  /* крестик 48×48: иконка 16×16 по центру, при наведении — подложка 40×40 (нода Close Button) */
+  .modal__close{
+    position:absolute;left:484px;top:8px;
+    width:48px;height:48px;border-radius:8px;
+    display:flex;align-items:center;justify-content:center;
+    color:var(--text-primary);cursor:pointer;
+  }
+  .modal__close::before{
+    content:'';position:absolute;width:40px;height:40px;
+    border-radius:8px;background:transparent;
+  }
+  .modal__close:hover::before{background:var(--neutral-tint)}
+  .modal__close svg{position:relative}
+  /* видимое кольцо фокуса — для навигации с клавиатуры (в макете его нет) */
+  .modal__close:focus-visible,
+  .modal__btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+  /* текстовая часть 540×128: заголовок 24/28 Medium, описание 18/24 */
+  .modal__head{padding:12px 32px;display:flex;flex-direction:column;gap:16px}
+  .modal__title{
+    margin:0;padding-top:12px;
+    font-size:24px;line-height:28px;font-weight:500;color:var(--text-primary);
+  }
+  .modal__text{
+    margin:0;width:476px;                 /* ширина текстового блока из макета */
+    font-size:18px;line-height:24px;color:var(--text-primary);
+  }
+  /* нижний блок: кнопка 222×36 в 24px от текста */
+  .modal__foot{padding:24px 32px 32px}
+  .modal__btn{
+    display:inline-flex;align-items:center;justify-content:center;
+    height:36px;min-width:222px;padding:0 20px;border-radius:8px;   /* ширина кнопки из макета */
+    background:var(--accent-vk);color:#fff;
+    font-size:15px;line-height:20px;font-weight:500;
+    white-space:nowrap;cursor:pointer;
+  }
+</style>
+</head>
+<body>
+
+<!-- ── хедер ───────────────────────────────────────────────────────── -->
+<header class="topbar">
+  <div class="topbar__left">
+    <img class="logo" src="assets/logo.png" alt="Почта Mail" width="93" height="30">
+
+    <nav class="tabs">
+      <a class="tab" href="#">Главная</a>
+      <a class="tab is-active" href="#" aria-current="page">Почта <span>7</span></a>
+      <a class="tab" href="#">Облако</a>
+      <a class="tab" href="#">Календарь</a>
+      <a class="tab" href="#">Документы</a>
+      <a class="tab" href="#">Все проекты <img class="tab__chevron" src="assets/chevron.png" alt="" width="20" height="16"></a>
+    </nav>
+  </div>
+
+  <div class="topbar__right">
+    <form class="search" role="search" onsubmit="return false">
+      <span class="search__icon"><img src="assets/search.png" alt="" width="20" height="20"></span>
+      <input class="search__input" type="search" placeholder="Поиск по почте" aria-label="Поиск по почте">
+    </form>
+
+    <a class="widget" href="#">
+      <img src="assets/mascot.png" alt="" width="22" height="22">
+      <span>пт, 31 июля</span>
+    </a>
+
+    <a class="avatar" href="#" aria-label="Профиль">
+      <img class="avatar__img" src="assets/avatar.png" alt="" width="36" height="36">
+      <span class="avatar__badge" aria-hidden="true"></span>
+    </a>
+  </div>
+</header>
+
+<!-- ── контент ─────────────────────────────────────────────────────── -->
+<main class="page">
+  <div class="card">
+
+    <h1 class="title">
+      <span class="title__line"><img class="title__check" src="assets/title-check.svg" alt="" width="61" height="53">Вы подключили <span class="title__underlined">совместную работу</span></span><br>
+      для example@mail.ru. Настройте доступ<br>
+      для example@mail.ru
+    </h1>
+
+    <div class="row">
+      <div class="qr"><img src="assets/qr.png" alt="QR-код для настройки с телефона" width="184" height="184"></div>
+
+      <div class="col-right">
+        <div class="info">
+          <section class="panel panel--owner">
+            <h2 class="panel__title">Если вы владелец</h2>
+            <p class="panel__text">Получите ссылку-приглашение в чат-боте в MAX и отправьте её участникам example@mail.ru</p>
+            <div class="panel__actions">
+              <a class="btn btn--primary" href="bot-lpr.html">Получить ссылку</a>
+              <button class="btn btn--secondary" type="button">К устройствам</button>
+            </div>
+          </section>
+
+          <section class="panel panel--member">
+            <h2 class="panel__title">Если вы участник</h2>
+            <p class="panel__text">Получите свой постоянный пароль в чат-боте в MAX</p>
+            <div class="panel__actions">
+              <a class="btn btn--secondary" href="bot-employee.html">Получить пароль</a>
+            </div>
+          </section>
+        </div>
+
+        <a class="linkbar" href="#">Что делать если нет приложения MAX?</a>
+      </div>
+    </div>
+
+    <!-- Подсказка к QR: в макете это слой внутри карточки (31453:284913).
+         Если в макете это была ревью-аннотация, а не часть интерфейса — удалите блок .hint целиком. -->
+    <div class="hint" aria-hidden="true">
+      <div class="hint__bubble">Отсканируйте QR-код,<br>чтобы настроить с телефона</div>
+      <img class="hint__arrow" src="assets/arrow.svg" alt="" width="85" height="73">
+    </div>
+
+  </div>
+</main>
+
+<!-- ── снекбар ─────────────────────────────────────────────────────── -->
+<div class="snackbar" role="status">
+  <img src="assets/check.png" alt="" width="28" height="28">
+  <p>Теперь в почту со своими паролями<br>могут заходить 10 участников</p>
+</div>
+
+<!-- ── кнопка «Помощь» ─────────────────────────────────────────────── -->
+<div class="help">
+  <button class="btn btn--secondary" type="button">
+    <img src="assets/help.png" alt="" width="20" height="20">Помощь
+  </button>
+</div>
+
+<!-- ── модальное окно: подсказка, если приложения MAX нет ───────────── -->
+<div class="modal" id="maxModal" role="dialog" aria-modal="true" aria-labelledby="maxModalTitle">
+  <div class="modal__card" tabindex="-1">
+
+    <!-- верхний блок: QR-код и зелёная подсказка, на которые указывает стрелка -->
+    <div class="modal__hero">
+      <div class="modal__qr"><img src="assets/qr.png" alt="QR-код для получения пароля" width="164" height="164"></div>
+
+      <p class="modal__tip">Отсканируйте QR-код, чтобы<br>получить пароль с телефона</p>
+
+      <!-- координаты пути — как в экспорте макета (карточка в нём смещена на 16/8) -->
+      <svg class="modal__arrow" width="540" height="264" viewBox="16 8 540 264" fill="none" aria-hidden="true">
+        <path d="M198.019 219.639C123.573 202.374 114.269 169.226 164.988 138.749M148.15 136.764C151.845 137.594 161.261 138.91 164.988 138.749C162.864 141.454 161.917 148.455 162.551 152.759" stroke="#0077FF" stroke-width="4" stroke-linecap="square"/>
+      </svg>
+
+      <button class="modal__close" type="button" aria-label="Закрыть">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <path d="M12.7364 3.2636C13.0879 3.61508 13.0879 4.18492 12.7364 4.5364L9.273 8L12.7364 11.4636C13.0586 11.7858 13.0854 12.2915 12.817 12.6442L12.7364 12.7364C12.3849 13.0879 11.8151 13.0879 11.4636 12.7364L8 9.273L4.5364 12.7364C4.18492 13.0879 3.61508 13.0879 3.2636 12.7364C2.91213 12.3849 2.91213 11.8151 3.2636 11.4636L6.727 8L3.2636 4.5364C2.94142 4.21421 2.91457 3.70853 3.18306 3.35577L3.2636 3.2636C3.61508 2.91213 4.18492 2.91213 4.5364 3.2636L8 6.727L11.4636 3.2636C11.8151 2.91213 12.3849 2.91213 12.7364 3.2636Z" fill="currentColor"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="modal__head">
+      <h2 class="modal__title" id="maxModalTitle">Откройте MAX в веб-приложении</h2>
+      <p class="modal__text">Отсканируйте QR-код&nbsp;— откроется чат-бот,<br>в&nbsp;нём&nbsp;можно настроить&nbsp;совместный доступ в аккаунт</p>
+    </div>
+
+    <div class="modal__foot">
+      <button class="modal__btn" type="button">Настроить с компьютера</button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  // Минимальный JS: заглушки-ссылки не должны перезагружать страницу.
+  document.querySelectorAll('a[href="#"]').forEach(function (a) {
+    a.addEventListener('click', function (e) { e.preventDefault(); });
+  });
+
+  // Модальное окно: открывается по ссылке «Что делать если нет приложения MAX?»,
+  // закрывается крестиком, кликом по затемнению и Esc. Фокус возвращается на ссылку.
+  (function () {
+    var modal = document.getElementById('maxModal');
+    var link = document.querySelector('.linkbar');
+    if (!modal || !link) return;
+
+    var card = modal.querySelector('.modal__card');
+    var closeBtn = modal.querySelector('.modal__close');
+    var btn = modal.querySelector('.modal__btn');
+    var opener = null;
+
+    function open() {
+      opener = document.activeElement;
+      modal.classList.add('is-open');
+      document.body.classList.add('is-modal-open');
+      card.focus();                                  // фокус в окно, без рамки вокруг крестика
+    }
+    function close() {
+      modal.classList.remove('is-open');
+      document.body.classList.remove('is-modal-open');
+      if (opener && opener.focus) opener.focus();
+    }
+
+    link.addEventListener('click', function (e) { e.preventDefault(); open(); });
+    closeBtn.addEventListener('click', close);
+    modal.addEventListener('click', function (e) { if (e.target === modal) close(); });
+    document.addEventListener('keydown', function (e) {
+      if (!modal.classList.contains('is-open')) return;
+      if (e.key === 'Escape') { close(); return; }
+      // Tab не выпускает фокус на страницу под окном.
+      if (e.key === 'Tab') {
+        var active = document.activeElement;
+        if (e.shiftKey && (active === closeBtn || active === card)) { e.preventDefault(); btn.focus(); }
+        else if (!e.shiftKey && active === btn) { e.preventDefault(); closeBtn.focus(); }
+      }
+    });
+  })();
+</script>
+</body>
+</html>

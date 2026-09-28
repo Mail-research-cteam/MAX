@@ -6,6 +6,7 @@
 <title>Почта Mail — совместная работа подключена</title>
 <!--
   Статическая страница по макету Figma: «Mail login • Restriction • Employer» (node 31212-185834, 1366×820).
+  Контент, подсказка и снекбар обновлены по макету ZBpLcvM4KceExSuYt6S2Mb, node 18-6489.
   Все размеры, отступы, радиусы и цвета взяты из макета (ноды 31212:185835 — хедер, 31453:267190 — карточка,
   31212:186310 — снекбар, 31214:186500 — кнопка «Помощь»). Иконки и иллюстрации — экспорт из того же файла (assets/).
   Модальное окно — ноды 31057:230134 (затемнение) и 31057:230136 (карточка).
@@ -134,12 +135,12 @@
   }
 
   /* ── карточка 948px: заголовок + QR + две колонки + ссылка ────────── */
-  .page{padding:164px 0 120px;display:flex;justify-content:center}
+  .page{padding:158px 0 120px;display:flex;justify-content:center}
   .card{width:948px;flex:0 0 948px;position:relative}
 
-  /* заголовок 32/40 Medium: контейнер из макета — 948×120 (3 строки по 40) */
+  /* заголовок 32/40 Medium: контейнер из макета — 948×80 (2 строки по 40) */
   .title{
-    height:120px;margin:0 0 32px;
+    height:80px;margin:0 0 32px;
     font-size:32px;line-height:40px;font-weight:500;
     color:var(--text-primary);
     text-align:center;
@@ -157,26 +158,29 @@
     background:url("assets/underline.svg") no-repeat center / 100% 12px;
   }
 
-  /* ряд: QR 248×248 + 12px + правая колонка 688px */
+  /* ряд: колонка QR 216px (карточка + ссылка под ней) + 12px + правая карточка 720px */
   .row{display:flex;gap:12px;align-items:flex-start}
+  .col-left{width:216px;flex:0 0 216px;display:flex;flex-direction:column;gap:12px}
   .qr{
-    width:248px;height:248px;flex:0 0 248px;
+    width:216px;height:216px;
     background:var(--surface);border-radius:24px;
     display:flex;align-items:center;justify-content:center;
   }
   .qr img{width:184px;height:184px}
-  .col-right{width:688px;display:flex;flex-direction:column;gap:12px}
 
-  /* 688×196 из макета: высота задана макетом, а не содержимым,
+  /* 720×216 из макета: высота задана макетом, а не содержимым,
      иначе блоки «съезжают» относительно QR-кода при другом шрифте */
   .info{
+    width:720px;flex:0 0 720px;
     background:var(--surface);border-radius:24px;padding:4px;
-    min-height:196px;display:flex;
+    min-height:216px;display:flex;
   }
-  .panel{width:340px;flex:0 0 340px;min-height:188px;padding:20px;border-radius:20px;display:flex;flex-direction:column}
+  .panel{width:356px;flex:0 0 356px;min-height:208px;padding:20px;border-radius:20px;display:flex;flex-direction:column}
   .panel__title{margin:0;font-size:24px;line-height:28px;font-weight:500;color:var(--text-primary)}
   .panel__text{margin:8px 0 0;flex:0 0 auto;font-size:15px;line-height:20px}
   .panel--owner .panel__text{color:var(--text-primary)}
+  /* список у владельца: маркер-точка, текст с отступом 22.5px */
+  .panel__list{margin:8px 0 0;padding:0 0 0 22.5px;font-size:15px;line-height:20px;color:var(--text-primary)}
   .panel--member .panel__text{color:var(--text-secondary)}
   /* в макете между абзацем и кнопками 20px, кнопки прижаты к низу панели на 20px */
   .panel__actions{margin-top:auto;padding-top:20px;flex:0 0 auto;display:flex;gap:12px}
@@ -192,27 +196,27 @@
   .btn--secondary{background:var(--neutral-tint);color:var(--text-primary)}
   .btn--secondary:hover{background:rgba(0,16,61,.1)}
 
+  /* ссылка под QR: без подложки, 216px, текст по центру в две строки */
   .linkbar{
-    height:40px;border-radius:20px;background:var(--surface);
-    display:flex;align-items:center;justify-content:center;
+    display:block;text-align:center;
     font-size:15px;line-height:20px;
   }
 
   /* ── подсказка у QR: координаты слоя из макета, относительно карточки ── */
   .hint{position:absolute;inset:0;pointer-events:none}
-  /* пузырь из макета: 204.72×54 (белая обводка 2px), повёрнут против часовой стрелки;
-     угол и точка вращения подобраны по отрендеренному фрейму */
+  /* пузырь из макета: 204.72×54 (белая обводка 1.5px), повёрнут на −4°;
+     позиция подобрана по отрендеренному фрейму (18:6969) */
   .hint__bubble{
-    position:absolute;left:-40px;top:125px;
+    position:absolute;left:-57px;top:76px;
     width:206.7px;height:56px;padding:0 13px;
     display:flex;align-items:center;
     border:2px solid #fff;border-radius:12px;
     background:var(--hint-bg);
-    transform:rotate(-3.3deg);transform-origin:0 0;
+    transform:rotate(-4deg);transform-origin:0 0;
     font-family:var(--font-alt);font-size:13px;line-height:18px;color:var(--hint-text);
   }
-  /* стрелка из макета: штрих 84×73, левый верхний угол в (145,376) фрейма */
-  .hint__arrow{position:absolute;left:-64px;top:150px;width:85px;height:73px}
+  /* стрелка из макета: штрих 85×73, упирается в левый край QR-карточки */
+  .hint__arrow{position:absolute;left:-82px;top:99px;width:85px;height:73px}
 
   /* ── снекбар слева внизу и кнопка «Помощь» справа внизу ──────────── */
   /* иконка в макете стоит в 12px от левого края тела, текст — в 52px (12 + 28 + 12) */
@@ -224,6 +228,8 @@
     background:var(--snack);border-radius:16px;box-shadow:var(--shadow-snack);
     font-family:var(--font-alt);font-size:15px;line-height:20px;color:#fff;
   }
+  .snackbar{transition:opacity .3s ease-out,visibility .3s}
+  .snackbar.is-hidden{opacity:0;visibility:hidden}
   .snackbar img{width:28px;height:28px;flex:0 0 28px}
   .snackbar p{margin:0 0 0 0;width:256px}
 
@@ -357,35 +363,36 @@
   <div class="card">
 
     <h1 class="title">
-      <span class="title__line"><img class="title__check" src="assets/title-check.svg" alt="" width="61" height="53">Вы подключили <span class="title__underlined">совместную работу</span></span><br>
-      для example@mail.ru. Настройте доступ<br>
-      для example@mail.ru
+      <span class="title__line"><img class="title__check" src="assets/title-check.svg" alt="" width="61" height="53">Вы купили <span class="title__underlined">совместную работу</span> в Почте</span><br>
+      для 10 участников. Что дальше
     </h1>
 
     <div class="row">
-      <div class="qr"><img src="assets/qr.png" alt="QR-код для настройки с телефона" width="184" height="184"></div>
+      <div class="col-left">
+        <div class="qr"><img src="assets/qr.png" alt="QR-код для настройки с телефона" width="184" height="184"></div>
+        <a class="linkbar" href="#">Что делать если<br>нет приложения MAX?</a>
+      </div>
 
-      <div class="col-right">
-        <div class="info">
-          <section class="panel panel--owner">
-            <h2 class="panel__title">Если вы владелец</h2>
-            <p class="panel__text">Получите ссылку-приглашение в чат-боте в MAX и отправьте её участникам example@mail.ru</p>
-            <div class="panel__actions">
-              <a class="btn btn--primary" href="bot-lpr.html">Получить ссылку</a>
-              <button class="btn btn--secondary" type="button">К устройствам</button>
-            </div>
-          </section>
+      <div class="info">
+        <section class="panel panel--owner">
+          <h2 class="panel__title">Если вы владелец</h2>
+          <ul class="panel__list">
+            <li>Получите ссылку-приглашение<br>для участников в чат-боте в MAX</li>
+            <li>Выйдите из аккаунта на 2 компьютерах</li>
+          </ul>
+          <div class="panel__actions">
+            <a class="btn btn--primary" href="bot-lpr.html">Получить ссылку</a>
+            <button class="btn btn--secondary" type="button">К устройствам</button>
+          </div>
+        </section>
 
-          <section class="panel panel--member">
-            <h2 class="panel__title">Если вы участник</h2>
-            <p class="panel__text">Получите свой постоянный пароль в чат-боте в MAX</p>
-            <div class="panel__actions">
-              <a class="btn btn--secondary" href="bot-employee.html">Получить пароль</a>
-            </div>
-          </section>
-        </div>
-
-        <a class="linkbar" href="#">Что делать если нет приложения MAX?</a>
+        <section class="panel panel--member">
+          <h2 class="panel__title">Если вы участник</h2>
+          <p class="panel__text">Получите свой постоянный пароль в чат-боте в MAX</p>
+          <div class="panel__actions">
+            <a class="btn btn--secondary" href="bot-employee.html">Получить пароль</a>
+          </div>
+        </section>
       </div>
     </div>
 
@@ -402,7 +409,7 @@
 <!-- ── снекбар ─────────────────────────────────────────────────────── -->
 <div class="snackbar" role="status">
   <img src="assets/check.png" alt="" width="28" height="28">
-  <p>Теперь в почту со своими паролями<br>могут заходить 10 участников</p>
+  <p>Теперь в почту со своими паролями<br>могут входить 10 участников</p>
 </div>
 
 <!-- ── кнопка «Помощь» ─────────────────────────────────────────────── -->
@@ -451,6 +458,12 @@
   document.querySelectorAll('a[href="#"]').forEach(function (a) {
     a.addEventListener('click', function (e) { e.preventDefault(); });
   });
+
+  // Снекбар висит 10 секунд после загрузки страницы и плавно скрывается.
+  setTimeout(function () {
+    var snack = document.querySelector('.snackbar');
+    if (snack) snack.classList.add('is-hidden');
+  }, 10000);
 
   // Модальное окно: открывается по ссылке «Что делать если нет приложения MAX?»,
   // закрывается крестиком, кликом по затемнению и Esc. Фокус возвращается на ссылку.

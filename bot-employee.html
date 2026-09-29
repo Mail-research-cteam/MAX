@@ -1978,7 +1978,7 @@ body.is-editing.view-split #flow .fl-viewport{right:400px}
         },
         {
           "label": "Открыть меню",
-          "target": "menu"
+          "target": "menu_copy"
         }
       ]
     },
@@ -1986,15 +1986,16 @@ body.is-editing.view-split #flow .fl-viewport{right:400px}
       "type": "external",
       "x": 2340,
       "y": 40,
-      "url": "password.html"
+      "url": "password.html",
+      "repeatUrl": "password.html??expired=true"
     },
     "menu": {
       "type": "bot",
-      "x": 2120,
-      "y": 662,
+      "x": 1732,
+      "y": 869,
       "time": "09:42",
       "auto": "",
-      "text": "Меню бота",
+      "text": "Выберите действие:",
       "buttons": [
         {
           "label": "Перезапустить бота",
@@ -2003,6 +2004,42 @@ body.is-editing.view-split #flow .fl-viewport{right:400px}
         {
           "label": "Написать в поддержку",
           "target": ""
+        }
+      ]
+    },
+    "menu_copy": {
+      "type": "bot",
+      "x": 2190,
+      "y": 676,
+      "time": "09:42",
+      "auto": "",
+      "text": "Выберите действие:",
+      "buttons": [
+        {
+          "label": "Не помню пароль",
+          "target": "bot_1"
+        },
+        {
+          "label": "Написать в поддержку",
+          "target": ""
+        }
+      ]
+    },
+    "bot_1": {
+      "type": "bot",
+      "x": 2505,
+      "y": 674,
+      "auto": "",
+      "text": "✅ Запрос на восстановление пароля для аккаунта example@mail.ru выполнен\n\n👇Нажмите кнопку ниже, чтобы перейти по ссылке и получить новый пароль",
+      "time": "09:46",
+      "buttons": [
+        {
+          "label": "Получить пароль",
+          "target": "password_page"
+        },
+        {
+          "label": "Открыть меню",
+          "target": "menu_copy"
         }
       ]
     }
@@ -2014,8 +2051,8 @@ body.is-editing.view-split #flow .fl-viewport{right:400px}
   <div class="fl-bar">
     <b>Сценарий</b>
     <span class="fl-draft" id="flDraft" title="Показан черновик из этого браузера, а не сценарий, зашитый в файл. «Сбросить» вернёт файловую версию.">черновик</span>
-    <button class="fl-t is-on" type="button" data-view="flow">Схема</button>
-    <button class="fl-t" type="button" data-view="split">Схема + превью</button>
+    <button class="fl-t" type="button" data-view="flow">Схема</button>
+    <button class="fl-t is-on" type="button" data-view="split">Схема + превью</button>
     <button class="fl-t" type="button" data-view="preview">Превью</button>
     <span class="fl-sep"></span>
     <button class="fl-t" type="button" id="flFit">По размеру</button>
@@ -2026,7 +2063,7 @@ body.is-editing.view-split #flow .fl-viewport{right:400px}
     <button class="fl-t fl-t--primary" type="button" id="flDownload">Скачать прототип</button>
   </div>
   <div class="fl-viewport" id="flView">
-    <div class="fl-layer" id="flLayer" style="transform: translate(36.714532px, 90.08025px) scale(0.72699);"></div>
+    <div class="fl-layer" id="flLayer" style="transform: translate(-656.151372px, 85.274531px) scale(0.45);"></div>
   </div>
   <div class="fl-fab">
     <div class="fl-menu" id="flMenu" hidden="">
@@ -2128,6 +2165,10 @@ body.is-editing.view-split #flow .fl-viewport{right:400px}
   }
   var trail = [];
   var timers = [];
+  // Счётчик открытий внешних экранов в рамках текущего запуска прототипа.
+  // Нужен для опционального сценария: первый клик открывает один URL,
+  // повторные клики по той же внешней странице — другой URL.
+  var externalOpenCount = {};
   var feed, overlay, layer, edgesSvg, viewport;
   var pan = { x: 40, y: 20 }, zoom = 1;
   var toastTimer = null, payTimer = null, payNode = null;
@@ -2435,7 +2476,13 @@ body.is-editing.view-split #flow .fl-viewport{right:400px}
     if (n.type === 'external') {
       // Внешние продуктовые экраны живут отдельными HTML-страницами.
       // Всегда открываем их в новой вкладке, чтобы состояние бота сохранилось.
-      if (n.url) window.open(n.url, '_blank', 'noopener');
+      // Если у узла заполнен repeatUrl, первое открытие ведёт на url,
+      // второе и последующие — на repeatUrl. Для узлов без repeatUrl
+      // поведение остаётся прежним.
+      var opened = externalOpenCount[id] || 0;
+      var externalUrl = (opened > 0 && n.repeatUrl) ? n.repeatUrl : n.url;
+      externalOpenCount[id] = opened + 1;
+      if (externalUrl) window.open(externalUrl, '_blank', 'noopener');
       return;
     }
     if (n.type === 'toast') {
@@ -2513,6 +2560,7 @@ body.is-editing.view-split #flow .fl-viewport{right:400px}
     closePay(false);
     closePick();
     trail = [];
+    externalOpenCount = {};
     selectedContactId = null;
     personChat = null;
     botTrail = null;
@@ -2782,8 +2830,9 @@ body.is-editing.view-split #flow .fl-viewport{right:400px}
         'Остальное зафиксировано по макету.</div>';
     } else if (kind === 'external') {
       var en = S.nodes[id];
-      h += fld('URL или путь', 'nodes.' + id + '.url', en.url) +
-        '<div class="fl-note">Откроется в новой вкладке. Для страницы рядом с index.html укажи, например, <b>password.html</b>.</div>';
+      h += fld('URL при первом открытии', 'nodes.' + id + '.url', en.url) +
+        fld('URL при повторном открытии (опционально)', 'nodes.' + id + '.repeatUrl', en.repeatUrl || '') +
+        '<div class="fl-note">Откроется в новой вкладке. Если второй URL оставить пустым, при каждом нажатии будет открываться первый экран. Если заполнить — первый клик откроет первый URL, второй и последующие клики по этой же кнопке/внешней странице откроют второй. Для страницы рядом с index.html укажи, например, <b>password.html</b>.</div>';
     } else if (kind === 'toast') {
       var tn = S.nodes[id];
       h += fld('Заголовок', 'nodes.' + id + '.title', tn.title) +
@@ -3138,7 +3187,7 @@ body.is-editing.view-split #flow .fl-viewport{right:400px}
       o.cancelLabel = n.cancelLabel || 'Отмена'; o.cancelTarget = n.cancelTarget || '';
     }
     if (kind === 'toast') { o.title = n.title || 'Готово'; o.sub = n.sub || ''; o.duration = n.duration || 2500; }
-    if (kind === 'external') { o.url = n.url || 'password.html'; }
+    if (kind === 'external') { o.url = n.url || 'password.html'; o.repeatUrl = n.repeatUrl || ''; }
     if (kind === 'contact_modal') { o.target = n.target || ''; }
     if (kind === 'person_chat') {
       o.message = n.message || PERSON_MSG_DEFAULT; o.time = n.time || '16:10';
@@ -3172,7 +3221,7 @@ body.is-editing.view-split #flow .fl-viewport{right:400px}
     if (kind === 'user') { n.text = 'Сообщение от пользователя'; n.time = '09:41'; }
     if (kind === 'contact') { n.name = 'Иван Иванов'; n.sub = 'Новый контакт'; n.time = '09:41'; }
     if (kind === 'toast') { n.title = 'Готово'; n.sub = ''; n.duration = 2500; }
-    if (kind === 'external') { delete n.auto; n.url = 'password.html'; }
+    if (kind === 'external') { delete n.auto; n.url = 'password.html'; n.repeatUrl = ''; }
     if (kind === 'payment') {
       n.price = '699 ₽'; n.members = '10'; n.successDelay = 6000;
       n.noteTpl = '+1ТБ на месяц и совместная работа в Почте для {members} участников';

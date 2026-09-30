@@ -240,10 +240,11 @@
   .help img{width:20px;height:20px}
 
   /* ── модальное окно «Если нет приложения MAX» ──────────
-     Ноды макета 31057:230134 (затемнение) и 31057:230136 (карточка): карточка
-     540×484 радиусом 12 по центру экрана, над затемнением rgba(0,0,0,.48) —
-     под ним та же страница mail.html. Размеры и цвета — из макета, тень карточки
-     из экспорта: 0 16 16 rgba(0,0,0,.08) + 0 0 8 rgba(0,0,0,.04). */
+     Ноды макета 31925:235329 (фрейм) и 31925:235331 (карточка) — актуальная
+     версия модалки с трёхстрочным описанием: карточка 540×508 радиусом 12
+     по центру экрана, над затемнением rgba(0,0,0,.48) — под ним та же
+     страница mail.html. Размеры и цвета — из макета, тень карточки из
+     экспорта: 0 16 16 rgba(0,0,0,.08) + 0 0 8 rgba(0,0,0,.04). */
   .modal{
     position:fixed;inset:0;z-index:100;
     display:flex;align-items:center;justify-content:center;
@@ -254,8 +255,11 @@
   .modal.is-open{visibility:visible;opacity:1}
   body.is-modal-open{overflow:hidden}            /* под окном страница не прокручивается */
 
+  /* высота карточки складывается из блоков: 264 (QR) + 152 (текст) + 92 (кнопка)
+     = 508. Жёсткая высота тут ломается, как только текст описания меняет число
+     строк, поэтому задаём её содержимым. */
   .modal__card{
-    position:relative;width:540px;height:484px;
+    position:relative;width:540px;height:auto;
     background:var(--surface);border-radius:12px;
     box-shadow:0 16px 16px rgba(0,0,0,.08),0 0 8px rgba(0,0,0,.04);
     overflow:hidden;
@@ -312,11 +316,11 @@
     margin:0;width:476px;                 /* ширина текстового блока из макета */
     font-size:18px;line-height:24px;color:var(--text-primary);
   }
-  /* нижний блок: кнопка 222×36 в 24px от текста */
+  /* нижний блок: кнопка 207×36 (ширина по тексту) в 24px от описания */
   .modal__foot{padding:24px 32px 32px}
   .modal__btn{
     display:inline-flex;align-items:center;justify-content:center;
-    height:36px;min-width:222px;padding:0 20px;border-radius:8px;   /* ширина кнопки из макета */
+    height:36px;padding:0 20px;border-radius:8px;   /* 20 + 167 (текст из макета) + 20 = 207 */
     background:var(--accent-vk);color:#fff;
     font-size:15px;line-height:20px;font-weight:500;
     white-space:nowrap;cursor:pointer;
@@ -381,7 +385,8 @@
             <li>Выйдите из аккаунта на 2 компьютерах</li>
           </ul>
           <div class="panel__actions">
-            <a class="btn btn--primary" href="bot-lpr.html">Получить ссылку</a>
+            <!-- флоу бота открываем в новой вкладке, чтобы эта страница оставалась открытой -->
+            <a class="btn btn--primary" href="bot-lpr.html" target="_blank" rel="noopener">Получить ссылку</a>
             <button class="btn btn--secondary" type="button">К устройствам</button>
           </div>
         </section>
@@ -390,7 +395,7 @@
           <h2 class="panel__title">Если вы участник</h2>
           <p class="panel__text">Получите свой постоянный пароль в чат-боте в MAX</p>
           <div class="panel__actions">
-            <a class="btn btn--secondary" href="bot-employee.html">Получить пароль</a>
+            <a class="btn btn--secondary" href="bot-employee.html" target="_blank" rel="noopener">Получить пароль</a>
           </div>
         </section>
       </div>
@@ -427,7 +432,7 @@
     <div class="modal__hero">
       <div class="modal__qr"><img src="assets/qr.png" alt="QR-код для получения пароля" width="164" height="164"></div>
 
-      <p class="modal__tip">Отсканируйте QR-код,<br>чтобыс открыть с телефона</p>
+      <p class="modal__tip">Отсканируйте QR-код,<br>чтобы открыть с телефона</p>
 
       <!-- координаты пути — как в экспорте макета (карточка в нём смещена на 16/8) -->
       <svg class="modal__arrow" width="540" height="264" viewBox="16 8 540 264" fill="none" aria-hidden="true">
@@ -447,7 +452,7 @@
     </div>
 
     <div class="modal__foot">
-      <button class="modal__btn" type="button">Настроить с компьютера</button>
+      <button class="modal__btn" type="button">Открыть с компьютера</button>
     </div>
 
   </div>
